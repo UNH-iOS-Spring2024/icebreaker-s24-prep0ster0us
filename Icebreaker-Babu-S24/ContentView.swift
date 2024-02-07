@@ -1,11 +1,18 @@
 import SwiftUI
+import FirebaseFirestore
 
 struct ContentView: View {
+    
+    // initalize firestore database
+    let db = Firestore.firestore()
+    
     @State private var fname: String = ""
     @State private var lname: String = ""
     @State private var pname: String = ""
     @State private var answer: String = ""
     @State private var question: String = ""
+    
+    @State var questions = [QuestionModel]()
     
     var body: some View {
         VStack {
@@ -16,7 +23,7 @@ struct ContentView: View {
             TextField("First Name", text: $fname)
             TextField("Last Name", text: $lname)
             TextField("Preferred  Name", text: $pname)
-            Button(action: {getRandomQuestion()}) {
+            Button(action: {setRandomQuestion()}) {
                 Text("Get a random question")
                     .font(.system(size: 28))
             }
@@ -31,12 +38,34 @@ struct ContentView: View {
         .multilineTextAlignment(.center)
         .font(.system(size: 24))
         .padding()
+        .onAppear() {
+            getQuestionFromFirebase()
+        }
     }
     
-    func getRandomQuestion() {
+    func setRandomQuestion() {
         print("set random question was pressed")
         print("First name = \(fname)")
+        
+        var newQuestion = questions.randomElement()?.text
+        self.question = question
+        // same as
+        // "if(self.question != nil) self.question = question!"
     }
+    
+    func getQuestionFromFirebase() {
+        db.collection("questions")
+            .getDocuments() { (querySnapshot, err) in
+                if let err = err {      // if error not nil, print error
+                    print("Error getting documents: \(err)")
+                } else {                // otherwise, get data from firestore
+                    for doc in querySnapshot!.documents {
+                        print("Question fetched: \(doc.documentID)")
+                    }
+                }
+            }
+    }
+    
     func writeStudentToDatabase() {
         print("submit was pressed")
         print("First name = \(fname)")
