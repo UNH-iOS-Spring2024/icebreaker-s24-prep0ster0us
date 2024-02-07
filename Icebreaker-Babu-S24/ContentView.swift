@@ -29,10 +29,17 @@ struct ContentView: View {
             }
             Text(question)
             TextField("Answer", text: $answer)
-            Button(action: {writeStudentToDatabase()}) {
+            Button(action: {
+                if(answer != "") {
+                    writeStudentToDatabase()
+                }
+                resetTextFields()
+            }) {
                 Text("Submit")
-                    .font(.system(size: 28))
+                    .font(.system(size: 36))
             }
+            .padding(30)
+            
         }
         .autocorrectionDisabled()
         .multilineTextAlignment(.center)
@@ -48,9 +55,9 @@ struct ContentView: View {
         print("First name = \(fname)")
         
         var newQuestion = questions.randomElement()?.text
-        self.question = question
-        // same as
-        // "if(self.question != nil) self.question = question!"
+        if(newQuestion != nil) {
+            self.question = newQuestion!
+        }
     }
     
     func getQuestionFromFirebase() {
@@ -60,7 +67,11 @@ struct ContentView: View {
                     print("Error getting documents: \(err)")
                 } else {                // otherwise, get data from firestore
                     for doc in querySnapshot!.documents {
-                        print("Question fetched: \(doc.documentID)")
+                        if let question = QuestionModel(id: doc.documentID, data: doc.data()) {
+                            print("Question ID: \(question.id), Question text: \(question.text)")
+                            // add to questions array
+                            self.questions.append(question)
+                        }
                     }
                 }
             }
@@ -71,7 +82,38 @@ struct ContentView: View {
         print("First name = \(fname)")
         print("Last name = \(lname)")
         print("Preferred name = \(pname)")
+        print("Question =  \(question)")
         print("Answer = \(answer)")
+        print("Class = iOS-Spring-2024")
+        
+        let data = [
+            "first_name" : fname,
+            "last_name"  : lname,
+            "pref_name"  : pname,
+            "question"   : question,
+            "answer"     : answer,
+            "class"      : "iOS-Spring-2024"
+        ] as [String: Any]
+        
+        var ref: DocumentReference? = nil
+        ref = db.collection("students")
+            .addDocument(data: data) { err in
+                if let err = err {
+                    print("Error adding to database: \(err)")
+                } else {
+                    print("Document added!")
+                }
+            }
+        
+    }
+    
+    func resetTextFields() {
+        fname = ""
+        lname = ""
+        pname = ""
+        question = ""
+        answer = ""
+        
     }
 }
 
